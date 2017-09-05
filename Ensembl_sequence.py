@@ -21,7 +21,7 @@ def find_seq(id_csv):
         seq_list[row][1:3] = ["Valid",seq_gene,seq_transcript]
         print('Transcript and gene sequence found.')
 
-    print('Seach complete.')
+    print('Sequence search complete.')
     return seq_list
 
 def find_all(a_str, sub):
@@ -32,6 +32,28 @@ def find_all(a_str, sub):
         yield start
         start += 1
 
+def reverse_complement(dna):
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+    return ''.join([complement[base] for base in dna[::-1]])
+
+def build_guide(sequence,PAMs,orientation):
+    guide=list()
+    if sum(site > 0 for site in PAMs) > 0:
+        if orientation > 0:
+            sites = (location for location in PAMs if location < 36 and location > 9)
+            for location in sites:
+                guide.append([location-31, 'sense', sequence[location-1:location+22]])
+        else:
+            sites = (location for location in PAMs if location < 51 and location > 24)
+            for location in sites:
+                guide.append([location-28, 'antisense', reverse_complement(sequence[location-20:location+3])])
+    else:
+        guide.append('NA')
+
+    print(guide)
+
+    return
+
 def find_PAM(PAM_list):
     print('Searching for PAMs')
     for s in PAM_list:
@@ -39,21 +61,25 @@ def find_PAM(PAM_list):
             row = PAM_list.index(s)
             TSS = PAM_list[row][2].find(PAM_list[row][3][0:9])
             TES = PAM_list[row][2].find(PAM_list[row][3][-10:-1])
-            seq_start = PAM_list[row][2][TSS-20:TSS+20]
-            seq_end = PAM_list[row][2][TES-20:TES+20]
+            seq_start = PAM_list[row][2][TSS-30:TSS+30]
+            seq_end = PAM_list[row][2][TES-30:TES+30]
             PAM_start_sense = list(find_all(seq_start,'GG'))
             PAM_start_antisense = list(find_all(seq_start,'CC'))
             print(PAM_list[row][0]+': a total of '+str(sum(i > 0 for i in PAM_start_sense) + sum(i > 0 for i in PAM_start_antisense))+' NGG PAMs found around the start site.')
+            print('Viable PAMs at start site :')
+            build_guide(seq_start,PAM_start_sense,1)
+            build_guide(seq_start,PAM_start_antisense,-1)
             PAM_end_sense = list(find_all(seq_end,'GG'))
             PAM_end_antisense = list(find_all(seq_end,'CC'))
             print(PAM_list[row][0]+': a total of '+str(sum(i > 0 for i in PAM_end_sense) + sum(i > 0 for i in PAM_end_antisense))+' NGG PAMs found around the end site.')
+            print('Viable PAMs at the end site :')
+            build_guide(seq_start,PAM_end_sense,1)
+            build_guide(seq_start,PAM_end_antisense,-1)
             PAM_list[row][4:9] = [seq_start,PAM_start_sense, PAM_start_antisense,seq_end,PAM_end_sense,PAM_end_antisense]
     print('PAM seach complete.')
     return PAM_list
 
-def build_guide(PAM_list):
-    
-    return
+
 
 id_csv = input('Transcript ID file: ')
 seq_list = find_seq(id_csv)
