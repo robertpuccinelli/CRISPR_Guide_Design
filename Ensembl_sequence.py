@@ -1,26 +1,22 @@
-import requests, sys, csv
+import requests, sys, csv, os
 
 def get_seq(id_csv):
-
-    id_list=list(csv.reader(open("transcripts.csv",encoding = "utf-8-sig")))
-    print(id_list)
+    id_list=list(csv.reader(open(id_csv,encoding = "utf-8-sig")))
     addr = "https://rest.ensembl.org/sequence/id/"
     header_gene="?content-type=application/json"
     header_transcript="?content-type=application/json;type=cds"
 
-    item=0
     for  id_transcript in id_list:
+        row = id_list.index(id_transcript)
         req_gene = requests.get(addr+id_transcript[0]+header_gene)
         req_transcript = requests.get(addr+id_transcript[0]+header_transcript)
 
         if (req_gene.ok == 0) or (req_transcript.ok == 0):
-            id_list[item][1:3]=["Invalid","NA","NA"]
-            item=+ 1
+            id_list[row][1:3]=["Invalid","NA","NA"]
             continue
         seq_gene = req_gene.json()['seq']
         seq_transcript = req_transcript.json()['seq']
-        id_list[item][1:3] = ["Valid",seq_gene,seq_transcript]
-        item =+ 1
+        id_list[row][1:3] = ["Valid",seq_gene,seq_transcript]
     return id_list
 
 def find_all(a_str, sub):
@@ -30,6 +26,13 @@ def find_all(a_str, sub):
         if start == -1: return
         yield start
         start += 1
+
+def get_PAM(id_list,PAM):
+    for s in id_list:
+        if s[1] == 'Valid':
+            row = id_list.index(s)
+
+            print(s[3])
 
 id_list=get_seq("transcripts.csv")
 
