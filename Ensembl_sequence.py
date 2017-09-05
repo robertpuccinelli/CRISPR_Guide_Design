@@ -2,7 +2,7 @@ import requests, sys, csv
 
 def get_seq(id_csv):
 
-    id_list=list(csv.reader(open(id_csv,encoding = "utf-8-sig")))
+    id_list=list(csv.reader(open("transcripts.csv",encoding = "utf-8-sig")))
     print(id_list)
     addr = "https://rest.ensembl.org/sequence/id/"
     header_gene="?content-type=application/json"
@@ -15,6 +15,7 @@ def get_seq(id_csv):
 
         if (req_gene.ok == 0) or (req_transcript.ok == 0):
             id_list[item][1:3]=["Invalid","NA","NA"]
+            item=+ 1
             continue
         seq_gene = req_gene.json()['seq']
         seq_transcript = req_transcript.json()['seq']
