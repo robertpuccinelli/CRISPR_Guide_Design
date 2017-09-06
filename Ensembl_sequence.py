@@ -1,4 +1,5 @@
 import requests, sys, csv, os
+from Bio.Blast import NCBIWWW as NCBI
 
 def find_seq(id_csv):
     seq_list=list(csv.reader(open(id_csv,encoding = "utf-8-sig")))
@@ -7,14 +8,14 @@ def find_seq(id_csv):
     header_transcript="?content-type=application/json;type=cds"
 
     for  id_transcript in seq_list:
-        print('Searching for sequences: '+id_transcript[0])
+        print('Searching for sequences : '+id_transcript[0])
         row = seq_list.index(id_transcript)
         req_gene = requests.get(addr+id_transcript[0]+header_gene)
         req_transcript = requests.get(addr+id_transcript[0]+header_transcript)
 
         if (req_gene.ok == 0) or (req_transcript.ok == 0):
             seq_list[row][1:3]=["Invalid","NA","NA"]
-            print('Transcript or gene sequence not found.')
+            print('Transcript or gene sequence NOT found.')
             continue
         seq_gene = req_gene.json()['seq']
         seq_transcript = req_transcript.json()['seq']
@@ -55,7 +56,7 @@ def build_guide(sequence,PAMs,orientation):
     return
 
 def find_PAM(PAM_list):
-    print('Searching for PAMs')
+    print('Searching for PAMs.')
     for s in PAM_list:
         if s[1] == 'Valid':
             row = PAM_list.index(s)
@@ -81,7 +82,7 @@ def find_PAM(PAM_list):
 
 
 
-id_csv = input('Transcript ID file: ')
+id_csv = input('Transcript ID file : ')
+print('Loading : '+id_csv)
 seq_list = find_seq(id_csv)
 PAM_list = find_PAM(seq_list)
-guide_list = build_guide(PAM_list)
