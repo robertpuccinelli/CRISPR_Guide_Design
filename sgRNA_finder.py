@@ -43,11 +43,11 @@ def build_guide(sequence,PAMs,orientation):
         if orientation > 0:
             sites = (location for location in PAMs if location < 36 and location > 9)
             for location in sites:
-                guide.append([location-31, 'sense', sequence[location-1:location+22]])
+                guide.append([location-31, 'sense', sequence[location-21:location+2]])
         else:
             sites = (location for location in PAMs if location < 51 and location > 24)
             for location in sites:
-                guide.append([location-28, 'antisense', reverse_complement(sequence[location-20:location+3])])
+                guide.append([location-28, 'antisense', reverse_complement(sequence[location:location+23])])
     else:
         guide.append('NA')
 
@@ -64,22 +64,25 @@ def find_PAM(PAM_list):
             TES = PAM_list[row][2].find(PAM_list[row][3][-10:-1])
             seq_start = PAM_list[row][2][TSS-30:TSS+30]
             seq_end = PAM_list[row][2][TES-30:TES+30]
+
             PAM_start_sense = list(find_all(seq_start,'GG'))
             PAM_start_antisense = list(find_all(seq_start,'CC'))
             print(PAM_list[row][0]+': a total of '+str(sum(i > 0 for i in PAM_start_sense) + sum(i > 0 for i in PAM_start_antisense))+' NGG PAMs found around the start site.')
             print('Viable PAMs at start site :')
-            testtest=build_guide(seq_start,PAM_start_sense,1)
+            build_guide(seq_start,PAM_start_sense,1)
             build_guide(seq_start,PAM_start_antisense,-1)
+
             PAM_end_sense = list(find_all(seq_end,'GG'))
             PAM_end_antisense = list(find_all(seq_end,'CC'))
             print(PAM_list[row][0]+': a total of '+str(sum(i > 0 for i in PAM_end_sense) + sum(i > 0 for i in PAM_end_antisense))+' NGG PAMs found around the end site.')
             print('Viable PAMs at the end site :')
             build_guide(seq_start,PAM_end_sense,1)
             build_guide(seq_start,PAM_end_antisense,-1)
+
             PAM_list[row][4:9] = [seq_start,PAM_start_sense, PAM_start_antisense,seq_end,PAM_end_sense,PAM_end_antisense]
     print('PAM seach complete.')
     return PAM_list
-
+ENST00000261890.6
 print()
 print(PAM_list)
 id_csv = input('Transcript ID file : ')
