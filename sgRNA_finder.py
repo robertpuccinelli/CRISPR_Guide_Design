@@ -1,5 +1,4 @@
 import requests, sys, csv, os
-from Bio.Blast import NCBIWWW as NCBI
 
 def find_seq(id_csv):
     seq_list=list(csv.reader(open(id_csv,encoding = "utf-8-sig")))
@@ -41,11 +40,11 @@ def build_guide(sequence,PAMs,orientation):
     guide=list()
     if sum(site > 0 for site in PAMs) > 0:
         if orientation > 0:
-            sites = (location for location in PAMs if location < 36 and location > 9)
+            sites = (location for location in PAMs if location < 51 and location > 31)
             for location in sites:
-                guide.append([location-31, 'sense', sequence[location-21:location+2]])
+                guide.append([location-31, 'sense', sequence[location-22:location+1]])
         else:
-            sites = (location for location in PAMs if location < 51 and location > 24)
+            sites = (location for location in PAMs if location < 32 and location > 12)
             for location in sites:
                 guide.append([location-28, 'antisense', reverse_complement(sequence[location:location+23])])
     else:
