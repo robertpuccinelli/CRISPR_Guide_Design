@@ -141,3 +141,6 @@ seq_list = find_seq(id_csv)
 seq_list_with_guides = find_PAM(seq_list)
 
 # NEED TO IDENTIFY SEQUENCES WITH OFFTARGET BINDING
+
+outputtext=NCBI.qblast('blastn','nt','CGGCCGCGCAATGGGCACCCGCG')
+print(outputtext.read())
