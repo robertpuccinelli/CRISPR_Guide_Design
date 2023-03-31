@@ -1,10 +1,13 @@
+import logging
 from crRNA_generator import GuideRNAGeneratorBase as gb
 from crRNA_generator import T7crRNAGenerator as tg
+
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s [%(name)s]', level=logging.INFO, datefmt='%H:%M:%S')
+
+print('Basic gen')
 gen = gb('GACCACCCCAAAAAUGAAGGGGACUAAAAC')
 gen.seq_target = 'TTACAAACATTGGCCGCAAA'
 gen.crRNAGenerate()
-print(gen.seq_crRNA)
-print(gen.seq_crRNA_DNA_template)
 
 seq_list = ['GGACCCCAAAATCAGCGAAA',\
             'CGCATTACGTTTGGTGGACC',\
@@ -25,5 +28,5 @@ t7gen = tg('GACCACCCCAAAAAUGAAGGGGACUAAAAC')
 
 for target in seq_list:
     t7gen.seq_target = target
-    t7gen.crRNAGenerateT7()
-    print(t7gen.seq_crRNA_DNA_template)
+    t7gen.crRNAGenerate()
+ #   print(t7gen.seq_crRNA_DNA_template)

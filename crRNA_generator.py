@@ -41,8 +41,6 @@ class GuideRNAGeneratorBase():
     dna_to_rna = {'A': 'A', 'C': 'C', 'G': 'G', 'T': 'U'}
     rna_to_dna = {'A': 'A', 'C': 'C', 'G': 'G', 'U': 'T'}
 
-    _verified_type = {'NONE': 0,'DNA': 1, 'RNA': 2}
-
     def __init__(self, seq_repeat: str):
         self.seq_repeat = seq_repeat
         self._seq_target = ''
@@ -59,6 +57,7 @@ class GuideRNAGeneratorBase():
         self._sequence_in_processing = input_seq_repeat
         self._validateSequence()
         self._seq_repeat = self._sequence_in_processing
+        logger.info('Repeat sequence: {}'.format(self._seq_repeat))
 
     @property
     def seq_target(self) -> str:
@@ -70,6 +69,7 @@ class GuideRNAGeneratorBase():
         self._sequence_in_processing = input_seq_target
         self._validateSequence()
         self._seq_target = self._sequence_in_processing
+        logger.info('Target sequence: {}'.format(self._seq_target))
 
     def crRNAGenerate(self):
         if (len(self.seq_target) & len(self.seq_repeat)) < 1:
@@ -92,20 +92,25 @@ class GuideRNAGeneratorBase():
         self._transcribe()
         self.seq_crRNA_DNA_template = self._sequence_in_processing
 
+        self._postprocess()
+
+        logger.info('crRNA sequence: {}'.format(self.seq_crRNA))
+        logger.info('ssDNA template: {}'.format(self.seq_crRNA_DNA_template))
+
+    def _postprocess(self):
+        pass
+
     def _reverseComplement(self):
         if set.issuperset(self.dna_bases, set(self._sequence_in_processing)):
-            logger.debug('Running reverse complement on DNA sequence.\
-                         \n\r  Input sequence: {}'.format(self._sequence_in_processing))
+            logger.debug('Running reverse complement on DNA sequence. Input sequence: {}'.format(self._sequence_in_processing))
             complement = self.dna_complement
 
         elif set.issuperset(self.rna_bases, set(self._sequence_in_processing)):
-            logger.debug('Running reverse complement on RNA sequence.\
-                         \n\r  Input sequence: {}'.format(self._sequence_in_processing))
+            logger.debug('Running reverse complement on RNA sequence. Input sequence: {}'.format(self._sequence_in_processing))
             complement = self.rna_complement
 
         else:
-            logger.error('Sequence being processed for reverse complement is not strictly RNA or DNA.\
-                         \n\r  Input sequence: {}'.format(self._sequence_in_processing))
+            logger.error('Sequence being processed for reverse complement is not strictly RNA or DNA. Input sequence: {}'.format(self._sequence_in_processing))
             return 0
         self._sequence_in_processing = ''.join([complement[base] for base in self._sequence_in_processing[::-1]])
         logger.debug('Reverse complement sequence: {}'.format(self._sequence_in_processing))
@@ -113,18 +118,15 @@ class GuideRNAGeneratorBase():
     
     def _transcribe(self):
         if set.issuperset(self.dna_bases, set(self._sequence_in_processing)):
-            logger.debug('Converting DNA to RNA.\
-                         \n\r  Input sequence: {}'.format(self._sequence_in_processing))
+            logger.debug('Converting DNA to RNA. Input sequence: {}'.format(self._sequence_in_processing))
             look_up_table = self.dna_to_rna
 
         elif set.issuperset(self.rna_bases, set(self._sequence_in_processing)):
-            logger.debug('Converting RNA to DNA.\
-                         \n\r  Input sequence: {}'.format(self._sequence_in_processing))
+            logger.debug('Converting RNA to DNA. Input sequence: {}'.format(self._sequence_in_processing))
             look_up_table = self.rna_to_dna
 
         else:
-            logger.error('Sequence being processed for conversion is not strictly RNA or DNA.\
-                         \n\r  Input sequence: {}'.format(self._sequence_in_processing))
+            logger.error('Sequence being processed for conversion is not strictly RNA or DNA. Input sequence: {}'.format(self._sequence_in_processing))
             return 0
         self._sequence_in_processing = ''.join([look_up_table[base] for base in self._sequence_in_processing])
         logger.debug('Converted sequence: {}'.format(self._sequence_in_processing))
@@ -140,20 +142,15 @@ class GuideRNAGeneratorBase():
             return valid
 
         if set.issuperset(self.dna_bases, seq_set):
-            self._last_verified_NA = self._verified_type['DNA']
             logger.debug('Valid DNA input sequence: {}'.format(self._sequence_in_processing))
             valid = 1
 
         elif set.issuperset(self.rna_bases, seq_set):
-            self._last_verified_NA = self._verified_type['RNA']
             logger.debug('Valid RNA input sequence: {}'.format(self._sequence_in_processing))
             valid = 1
 
         else:
-            logger.error('Invalid input sequence!\
-                         \n\r  DNA should only contain {}\
-                         \n\r  RNA should only contain {}\
-                         \n\r  Input sequence: {}'.format(self.dna_bases, self.rna_bases, self._sequence_in_processing))
+            logger.error('Invalid input sequence! DNA should only contain {}. RNA should only contain {}. Input contains: {}'.format(self.dna_bases, self.rna_bases, set(self._sequence_in_processing)))
 
         return valid
         
@@ -164,7 +161,7 @@ class T7crRNAGenerator(GuideRNAGeneratorBase):
     t7_reverse_comp_promoter = 'CTATAGTGAGTCGTATTA'
     t7_initial_transcription = 'G'
 
-    def crRNAGenerateT7(self):
-        self.crRNAGenerate()
+    def _postprocess(self):
+        super()._postprocess()
         self.seq_crRNA_DNA_template = self.seq_crRNA_DNA_template + self.t7_reverse_comp_promoter
         self.seq_crRNA = self.t7_initial_transcription + self.seq_crRNA
