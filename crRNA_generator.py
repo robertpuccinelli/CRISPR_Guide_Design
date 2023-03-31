@@ -157,3 +157,14 @@ class GuideRNAGeneratorBase():
 
         return valid
         
+
+class T7crRNAGenerator(GuideRNAGeneratorBase):
+    """Appends T7 promoter and inital transcribed nucleotides to crRNA and DNA template."""
+
+    t7_reverse_comp_promoter = 'CTATAGTGAGTCGTATTA'
+    t7_initial_transcription = 'G'
+
+    def crRNAGenerateT7(self):
+        self.crRNAGenerate()
+        self.seq_crRNA_DNA_template = self.seq_crRNA_DNA_template + self.t7_reverse_comp_promoter
+        self.seq_crRNA = self.t7_initial_transcription + self.seq_crRNA
