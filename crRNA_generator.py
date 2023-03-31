@@ -1,3 +1,4 @@
+"""crRNA generation utilities."""
 import logging
 
 logger = logging.getLogger()
@@ -6,33 +7,22 @@ logger = logging.getLogger()
 class GuideRNAGeneratorBase():
     """Base class for crRNA generation.
     
+    Parameters
+    ----------
+    seq_repeat : str
+        Initial repeat sequence to match the desired Cas application
 
-    ########################################
-    # crRNA Generation Process Definitions #
-    ########################################
-    RS : Repeat Sequence
-    TS : Target Sequence
-    T  : Transform bases from DNA to RNA or reverse
-    RC : Reverse Complement
-    J[a,b] : Join element 'b' to end of element 'a'
+    Attributes
+    ----------
+    seq_repeat : str
+        Direct repeat sequence for Cas.
+    seq_target : str
+        Target sequence for hybridization.
+    seq_crRNA : str
+        Final crRNA sequence to be loaded in the ribonucleoprotein complex.
+    seq_crRNA_DNA_template : str
+        Reverse transcription of the final crRNA sequence.
 
-    ####################################
-    # RS (RNA) + Target Sequence (DNA) #
-    ####################################
-    T^TS
-    RC^T^TS
-    J[RS, RC^T^TS] (crRNA)
-    RC^J[RS, RC^T^TS]
-    T^RC^J[RS, RC^T^TS] (DNA template for crRNA)
-
-    ####################################
-    # RS (RNA) + Target Sequence (RNA) #
-    ####################################
-
-    RC^TS
-    J[RS, RC^TS] (crRNA)
-    RC^J[RS, RC^TS]
-    T^RC^J[RS, RC^TS] (DNA template for crRNA)
     """
     dna_bases = {'A','T','G','C'}
     rna_bases = {'A','U','G','C'}
@@ -49,11 +39,12 @@ class GuideRNAGeneratorBase():
 
     @property
     def seq_repeat(self) -> str:
-        """Direct repeat sequence in use."""
+        """Return direct repeat sequence in use."""
         return self._seq_repeat
     
     @seq_repeat.setter
     def seq_repeat(self, input_seq_repeat: str):
+        """Set direct repeat sequence."""
         self._sequence_in_processing = input_seq_repeat
         self._validateSequence()
         self._seq_repeat = self._sequence_in_processing
@@ -61,17 +52,50 @@ class GuideRNAGeneratorBase():
 
     @property
     def seq_target(self) -> str:
-        """Target sequence to be appended to guide."""
+        """Return target sequence in use."""
         return self._seq_target
     
     @seq_target.setter
     def seq_target(self, input_seq_target: str):
+        """Set target sequence."""
         self._sequence_in_processing = input_seq_target
         self._validateSequence()
         self._seq_target = self._sequence_in_processing
         logger.info('Target sequence: {}'.format(self._seq_target))
 
     def crRNAGenerate(self):
+        """Synthesize crRNA and ssDNA template from provided repeat and target sequences.
+        
+        ########################################
+        # crRNA Generation Process Definitions #
+        ########################################
+        RS : Repeat Sequence
+        TS : Target Sequence
+        T  : Transform bases from DNA to RNA or reverse
+        RC : Reverse Complement
+        J[a,b] : Join element 'a' and 'b'
+
+        ####################################
+        # RS (RNA) + Target Sequence (DNA) #
+        ####################################
+        1. T^TS
+        2. RC^T^TS
+        3. J[RS, RC^T^TS] (crRNA)
+        4. RC^J[RS, RC^T^TS]
+        5. T^RC^J[RS, RC^T^TS] (DNA template for crRNA)
+        6. Postprocess (Generic overloaded function)
+
+        ####################################
+        # RS (RNA) + Target Sequence (RNA) #
+        ####################################
+
+        1. RC^TS
+        2. J[RS, RC^TS] (crRNA)
+        3. RC^J[RS, RC^TS]
+        4. T^RC^J[RS, RC^TS] (DNA template for crRNA)
+        5. Postprocess (Generic overloaded function)
+        """
+
         if (len(self.seq_target) & len(self.seq_repeat)) < 1:
             logger.error('seq_target must be defined!')
             return
@@ -80,7 +104,7 @@ class GuideRNAGeneratorBase():
 
         # If target sequence is in DNA representation, convert to RNA representation
         if set.issuperset(self.dna_bases, set(self.seq_target)):
-            self._transcribe()
+            self._transform()
 
         # Generate crRNA sequence
         self._reverseComplement()
@@ -89,7 +113,7 @@ class GuideRNAGeneratorBase():
 
         # Generate ssDNA template
         self._reverseComplement()
-        self._transcribe()
+        self._transform()
         self.seq_crRNA_DNA_template = self._sequence_in_processing
 
         self._postprocess()
@@ -101,6 +125,8 @@ class GuideRNAGeneratorBase():
         pass
 
     def _reverseComplement(self):
+        """Perform reverse complement of RNA or DNA sequence."""
+
         if set.issuperset(self.dna_bases, set(self._sequence_in_processing)):
             logger.debug('Running reverse complement on DNA sequence. Input sequence: {}'.format(self._sequence_in_processing))
             complement = self.dna_complement
@@ -116,7 +142,9 @@ class GuideRNAGeneratorBase():
         logger.debug('Reverse complement sequence: {}'.format(self._sequence_in_processing))
         return 1
     
-    def _transcribe(self):
+    def _transform(self):
+        """Swap U's and T's in the sequence to convert between RNA and DNA."""
+
         if set.issuperset(self.dna_bases, set(self._sequence_in_processing)):
             logger.debug('Converting DNA to RNA. Input sequence: {}'.format(self._sequence_in_processing))
             look_up_table = self.dna_to_rna
@@ -133,6 +161,8 @@ class GuideRNAGeneratorBase():
         return 1
 
     def _validateSequence(self):
+        """Check for unusual characters and change string to upper-case."""
+
         valid = 0
         self._sequence_in_processing = self._sequence_in_processing.upper()
         seq_set = set(self._sequence_in_processing)
@@ -156,12 +186,16 @@ class GuideRNAGeneratorBase():
         
 
 class T7crRNAGenerator(GuideRNAGeneratorBase):
-    """Appends T7 promoter and inital transcribed nucleotides to crRNA and DNA template."""
+    """A crRNA generator that appends modifications required to synthesize crRNA with T7.
+    
+    See GuideRNAGeneratorBase class for documentation.
+    """
 
-    t7_reverse_comp_promoter = 'CTATAGTGAGTCGTATTA'
-    t7_initial_transcription = 'G'
+    _t7_reverse_comp_promoter = 'CTATAGTGAGTCGTATTA'
+    _t7_initial_transcription = 'G'
 
     def _postprocess(self):
+        """Appends T7 promoter and inital transcribed nucleotides to crRNA and DNA template."""
         super()._postprocess()
-        self.seq_crRNA_DNA_template = self.seq_crRNA_DNA_template + self.t7_reverse_comp_promoter
-        self.seq_crRNA = self.t7_initial_transcription + self.seq_crRNA
+        self.seq_crRNA_DNA_template = self.seq_crRNA_DNA_template + self._t7_reverse_comp_promoter
+        self.seq_crRNA = self._t7_initial_transcription + self.seq_crRNA
